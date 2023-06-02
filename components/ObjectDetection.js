@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
-import { ClipLoader } from 'react-spinners';
+import '@tensorflow/tfjs';
 import { FiTarget } from 'react-icons/fi';
+import { CircleLoader } from 'react-spinners';
 
 const ObjectDetection = () => {
   const videoRef = useRef(null);
@@ -11,6 +12,7 @@ const ObjectDetection = () => {
 
   useEffect(() => {
     const runObjectDetection = async () => {
+      setLoading(true);
       const video = videoRef.current;
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' },
@@ -20,14 +22,11 @@ const ObjectDetection = () => {
 
       const model = await cocoSsd.load();
       setInterval(async () => {
-        setLoading(true); // Set loading to true before detecting objects
-
         const predictions = await model.detect(video);
         setPredictions(predictions);
         drawBoundingBoxes(predictions);
-
-        setLoading(false); // Set loading to false after detecting objects
       }, 1000);
+      setLoading(false);
     };
 
     runObjectDetection();
@@ -37,42 +36,42 @@ const ObjectDetection = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
-
+  
     const { videoWidth, videoHeight } = video;
     canvas.width = videoWidth;
     canvas.height = videoHeight;
-
+  
     context.clearRect(0, 0, canvas.width, canvas.height);
-
+  
     predictions.forEach((prediction) => {
       const [x, y, width, height] = prediction.bbox;
       context.beginPath();
       context.rect(x, y, width, height);
       context.lineWidth = 2;
-      context.strokeStyle = 'rgba(255, 0, 0, 0.8)'; // Bright red color with alpha value 0.8
-      context.fillStyle = 'rgba(255, 0, 0, 0.2)'; // Light red color with alpha value 0.2
+      context.strokeStyle = 'rgba(0, 0, 256, 0.8)';
+      context.fillStyle = 'rgba(0, 0, 256, 0.2)';
       context.stroke();
       context.fill();
-      context.fillStyle = 'white'; // Set the font color to white
+      context.fillStyle = 'white';
       context.fillText(
         `${prediction.class} ${Math.round(prediction.score * 100)}%`,
         x,
         y > 10 ? y - 5 : 10
       );
     });
-  };
+  };  
 
   return (
     <div className="flex flex-col bg-opacity-80">
-      <div className="relative">
-        <video ref={videoRef} className="w-full max-w-4xl rounded-lg shadow-xl my-5" />
-        {loading && (
-          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-            <ClipLoader color="#EF4444" size={50} />
-          </div>
-        )}
-        <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
-      </div>
+    <div className="relative">
+      {loading && (
+        <div className="absolute top-0 left-0 w-full h-full flex justify-center items-center">
+          <CircleLoader color="#ff00ff" size={80} />
+        </div>
+      )}
+      <video ref={videoRef} className="w-full max-w-4xl rounded-lg shadow-xl my-5" />
+      <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
+    </div>
       <div className="flex justify-center">
         <div className="bg-white bg-opacity-40 rounded-lg shadow-lg my-10 w-4/5">
           {predictions.map((prediction, index) => (
