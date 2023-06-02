@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
-import '@tensorflow/tfjs';
+import { ClipLoader } from 'react-spinners';
 import { FiTarget } from 'react-icons/fi';
 
 const ObjectDetection = () => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [predictions, setPredictions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const runObjectDetection = async () => {
@@ -19,9 +20,13 @@ const ObjectDetection = () => {
 
       const model = await cocoSsd.load();
       setInterval(async () => {
+        setLoading(true); // Set loading to true before detecting objects
+
         const predictions = await model.detect(video);
         setPredictions(predictions);
         drawBoundingBoxes(predictions);
+
+        setLoading(false); // Set loading to false after detecting objects
       }, 1000);
     };
 
@@ -32,13 +37,13 @@ const ObjectDetection = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
-  
+
     const { videoWidth, videoHeight } = video;
     canvas.width = videoWidth;
     canvas.height = videoHeight;
-  
+
     context.clearRect(0, 0, canvas.width, canvas.height);
-  
+
     predictions.forEach((prediction) => {
       const [x, y, width, height] = prediction.bbox;
       context.beginPath();
@@ -55,12 +60,17 @@ const ObjectDetection = () => {
         y > 10 ? y - 5 : 10
       );
     });
-  };  
+  };
 
   return (
     <div className="flex flex-col bg-opacity-80">
       <div className="relative">
         <video ref={videoRef} className="w-full max-w-4xl rounded-lg shadow-xl my-5" />
+        {loading && (
+          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+            <ClipLoader color="#EF4444" size={50} />
+          </div>
+        )}
         <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
       </div>
       <div className="flex justify-center">
